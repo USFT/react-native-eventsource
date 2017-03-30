@@ -20,6 +20,7 @@ static NSString *const ESEventKeyValuePairSeparator = @"\n";
 
 static NSString *const ESEventDataKey = @"data";
 static NSString *const ESEventIDKey = @"id";
+static NSString *const ESEventAuthKey = @"auth";
 static NSString *const ESEventEventKey = @"event";
 static NSString *const ESEventRetryKey = @"retry";
 
@@ -35,6 +36,7 @@ static NSString *const ESEventRetryKey = @"retry";
 @property (nonatomic, assign) NSTimeInterval timeoutInterval;
 @property (nonatomic, assign) NSTimeInterval retryInterval;
 @property (nonatomic, strong) id lastEventID;
+@property (nonatomic, strong) NSString *authHeader;
 
 - (void)_open;
 - (void)_dispatchEvent:(Event *)e;
@@ -53,8 +55,19 @@ static NSString *const ESEventRetryKey = @"retry";
     return [[EventSource alloc] initWithURL:URL timeoutInterval:timeoutInterval];
 }
 
++ (instancetype)eventSourceWithURL:(NSURL *)URL auth:(NSString *)auth
+{
+    return [[EventSource alloc] initWithURL:URL auth:auth];
+}
+
 - (instancetype)initWithURL:(NSURL *)URL
 {
+    return [self initWithURL:URL timeoutInterval:ES_DEFAULT_TIMEOUT];
+}
+
+- (instancetype)initWithURL:(NSURL *)URL auth:(NSString *)auth
+{
+    self.authHeader = auth;
     return [self initWithURL:URL timeoutInterval:ES_DEFAULT_TIMEOUT];
 }
 
@@ -221,7 +234,11 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
     if (self.lastEventID) {
         [request setValue:self.lastEventID forHTTPHeaderField:@"Last-Event-ID"];
     }
-
+    
+    if (self.authHeader) {
+        [request setValue:self.authHeader forHTTPHeaderField:@"auth"];
+    }
+    
     NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
                                                           delegate:self
                                                      delegateQueue:[NSOperationQueue currentQueue]];

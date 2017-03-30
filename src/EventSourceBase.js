@@ -18,7 +18,7 @@ class EventSourceBase extends EventTarget {
   readyState: number;
   url: ?string;
 
-  constructor(url: string) {
+  constructor(url: string, auth: string) {
     super();
     this.CONNECTING = 0;
     this.OPEN = 1;
@@ -26,7 +26,7 @@ class EventSourceBase extends EventTarget {
 
     this.url = url;
     this.readyState = this.CONNECTING;
-    this.connectToSourceImpl(url);
+    this.connectToSourceImpl(url, auth);
   }
 
   close(): void {

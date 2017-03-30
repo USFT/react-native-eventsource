@@ -23,10 +23,10 @@ class EventSource extends EventSourceBase {
   _sourceId: number;
   _subs: any;
 
-  connectToSourceImpl(url: string): void {
+  connectToSourceImpl(url: string, auth: string): void {
     this._sourceId = EventSourceId++;
 
-    RNEventSource.connect(url, this._sourceId);
+    RNEventSource.connect(url, this._sourceId, auth);
 
     this._registerEvents(this._sourceId);
   }

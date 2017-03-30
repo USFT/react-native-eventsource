@@ -110,6 +110,10 @@ public class SseEventStream {
     }
 
     public void connect() throws IOException {
+        connect("");
+    }
+
+    public void connect(String authHeader) throws IOException {
         LOG.entering(CLASS_NAME, "connect");
         if (lastEventId != null && (lastEventId.length() > 0)) {
             sseLocation += (sseLocation.indexOf("?") == -1 ? "?" : "&") + ".ka=" + lastEventId;
@@ -118,6 +122,11 @@ public class SseEventStream {
         try {
             HttpURI uri = new HttpURI(this.sseLocation);
             sseSource = new HttpRequest(Method.GET, uri, true);
+
+            if (!authHeader.isEmpty() && authHeader != null) {
+                sseSource.setHeader("auth", authHeader);
+            }
+
             sseHandler.processOpen(sseSource);
 
             if (!reconnected.get()) {

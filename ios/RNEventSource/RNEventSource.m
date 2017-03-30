@@ -39,11 +39,11 @@ RCT_EXPORT_MODULE();
   }
 }
 
-RCT_EXPORT_METHOD(connect:(NSString *)URLString sourceID:(nonnull NSNumber *)sourceID)
+RCT_EXPORT_METHOD(connect:(NSString *)URLString sourceID:(nonnull NSNumber *)sourceID auth:(nonnull NSString *)auth)
 {
   NSURL *serverURL = [NSURL URLWithString:URLString];
 
-  EventSource *source = [EventSource eventSourceWithURL:serverURL];
+    EventSource *source = [EventSource eventSourceWithURL:serverURL auth:auth];
   source.reactTag = sourceID;
 
   [source onOpen: ^(Event *e) {

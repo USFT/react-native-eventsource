@@ -45,10 +45,20 @@ public abstract class SseEventSource {
      * thread invoking this method will be blocked till a successful connection
      * is established. If the connection cannot be established, then an 
      * IOException is thrown and the thread is unblocked. 
-     * 
+     *
      * @throws IOException    if the connection cannot be established
      */
     public abstract void connect() throws IOException;
+
+    /**
+     * Connects with the server using an end-point. This is a blocking call. The
+     * thread invoking this method will be blocked till a successful connection
+     * is established. If the connection cannot be established, then an
+     * IOException is thrown and the thread is unblocked.
+     *
+     * @throws IOException    if the connection cannot be established
+     */
+    public abstract void connect(String auth) throws IOException;
 
     /**
      * Returns a {@link SseEventReader} that can be used to receive 

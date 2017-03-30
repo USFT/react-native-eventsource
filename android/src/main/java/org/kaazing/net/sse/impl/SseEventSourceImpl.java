@@ -98,13 +98,18 @@ public class SseEventSourceImpl extends SseEventSource {
 
     @Override
     public synchronized void connect() throws IOException {
+        connect("");
+    }
+
+    @Override
+    public synchronized void connect(String auth) throws IOException {
         _LOG.entering(_CLASS_NAME, "connect");
-        
+
         if (_readyState != ReadyState.CLOSED) {
             String s = "Event source must be closed before connecting";
             throw new SseException(s);
         }
-        
+
         _eventStream = new SseEventStream(_location.toString());
         _eventStream.setListener(_eventStreamListener);
         _eventStream.setRetryTimeout(_retryTimeout);
@@ -123,7 +128,7 @@ public class SseEventSourceImpl extends SseEventSource {
         // thread. The registered SseEventStreamListener is also invoked as part
         // of this call. In WebSocket, we have to block to synchronize with the
         // other thread that invokes the listener. Here, we don't have to.
-        _eventStream.connect();
+        _eventStream.connect(auth);
 
         // Check if there is any exception that needs to be reported.
         SseException exception = getException();

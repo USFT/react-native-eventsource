@@ -1,15 +1,70 @@
 {
-  "name": "react-native-eventsource",
-  "version": "0.0.2",
+  "_args": [
+    [
+      {
+        "raw": "react-native-eventsource",
+        "scope": null,
+        "escapedName": "react-native-eventsource",
+        "name": "react-native-eventsource",
+        "rawSpec": "",
+        "spec": "latest",
+        "type": "tag"
+      },
+      "/Users/shanetheking/Code/mobile_react_native"
+    ]
+  ],
+  "_from": "react-native-eventsource@latest",
+  "_id": "react-native-eventsource@0.0.2",
+  "_inCache": true,
+  "_location": "/react-native-eventsource",
+  "_nodeVersion": "6.9.2",
+  "_npmOperationalInternal": {
+    "host": "packages-18-east.internal.npmjs.com",
+    "tmp": "tmp/react-native-eventsource-0.0.2.tgz_1490494017489_0.8139105837326497"
+  },
+  "_npmUser": {
+    "name": "jonnybgod",
+    "email": "jonnybgod@gmail.com"
+  },
+  "_npmVersion": "4.4.1",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "react-native-eventsource",
+    "scope": null,
+    "escapedName": "react-native-eventsource",
+    "name": "react-native-eventsource",
+    "rawSpec": "",
+    "spec": "latest",
+    "type": "tag"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/react-native-eventsource/-/react-native-eventsource-0.0.2.tgz",
+  "_shasum": "cc609d0dfe895dab8cd3bcca81771047a823823d",
+  "_shrinkwrap": null,
+  "_spec": "react-native-eventsource",
+  "_where": "/Users/shanetheking/Code/mobile_react_native",
+  "author": {
+    "name": "João Ribeiro",
+    "email": "jonnybgod@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/JonnyBGod/react-native-eventsource/issues"
+  },
+  "dependencies": {},
   "description": "A react-native component for EventSource: Server-Sent Events for iOS and Android",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "devDependencies": {
+    "react-native": "^0.42.3"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/JonnyBGod/react-native-eventsource"
+  "directories": {},
+  "dist": {
+    "shasum": "cc609d0dfe895dab8cd3bcca81771047a823823d",
+    "tarball": "https://registry.npmjs.org/react-native-eventsource/-/react-native-eventsource-0.0.2.tgz"
   },
+  "gitHead": "0cb036847651710a8d454c0c505504bb4ca5ff90",
+  "homepage": "https://github.com/JonnyBGod/react-native-eventsource#readme",
   "keywords": [
     "react-native",
     "react-component",
@@ -18,12 +73,26 @@
     "event-source",
     "sse"
   ],
-  "author": "João Ribeiro <jonnybgod@gmail.com>",
   "license": "MIT",
-  "devDependencies": {
-    "react-native": "^0.42.3"
-  },
+  "main": "index.js",
+  "maintainers": [
+    {
+      "name": "jonnybgod",
+      "email": "jonnybgod@gmail.com"
+    }
+  ],
+  "name": "react-native-eventsource",
+  "optionalDependencies": {},
   "peerDependencies": {
     "react-native": "^0.42.3"
-  }
+  },
+  "readme": "ERROR: No README data found!",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JonnyBGod/react-native-eventsource.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "0.0.3"
 }

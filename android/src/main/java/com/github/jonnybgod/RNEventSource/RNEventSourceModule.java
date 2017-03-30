@@ -49,12 +49,12 @@ public class RNEventSourceModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void connect(final String url, final int id) {
+  public void connect(final String url, final int id, final String auth) {
     try {
 
       final SseEventSource source = factory.createEventSource(new URI(url));
 
-      source.connect();
+      source.connect(auth);
 
       mEventSourceConnections.put(id, source);
       WritableMap params = Arguments.createMap();

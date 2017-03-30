@@ -1,8 +1,0 @@
-rootProject.name = 'example'
-include ':react-native-eventsource'
-project(':react-native-eventsource').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-eventsource/android')
-
-include ':app'
-
-include ':RNEventSource'
-project(':RNEventSource').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-eventsource/android')
