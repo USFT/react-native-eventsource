@@ -26,6 +26,7 @@ xcuserdata
 *.moved-aside
 *.xcuserstate
 
+.idea/
 
 ### Android ###
 # Built application files

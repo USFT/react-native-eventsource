@@ -61,6 +61,7 @@ public class RNEventSourceModule extends ReactContextBaseJavaModule {
       params.putInt("id", id);
       sendEvent("eventsourceOpen", params);
 
+      eventSourceDebug(id, "Event source debug working!");
       Thread sseEventReaderThread = new Thread() {
         public void run() {
           try {
@@ -90,7 +91,8 @@ public class RNEventSourceModule extends ReactContextBaseJavaModule {
                   break;
               }
             }
-            
+
+            eventSourceDebug(id, "Connection dead, brah");
             notifyEventSourceFailed(id, "Connection with the event source was closed.");
             close(id);
           }
@@ -114,6 +116,7 @@ public class RNEventSourceModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void close(int id) {
+    eventSourceDebug(id, "Close called");
     SseEventSource source = mEventSourceConnections.get(id);
     Thread thead = mEventReaderThreads.get(id);
     if (source == null) {
@@ -143,5 +146,12 @@ public class RNEventSourceModule extends ReactContextBaseJavaModule {
     params.putInt("id", id);
     params.putString("message", message);
     sendEvent("eventsourceFailed", params);
+  }
+
+  private void eventSourceDebug(int id, String message) {
+    WritableMap params = Arguments.createMap();
+    params.putInt("id", id);
+    params.putString("message", message);
+    sendEvent("eventsourceDebug", params);
   }
 }
