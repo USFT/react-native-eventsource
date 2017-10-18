@@ -137,7 +137,6 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
     NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
     self.httpStatus = httpResponse.statusCode;
     if (httpResponse.statusCode == 200) {
-        self.httpResponseData = nil;
         // Opened
         Event *e = [Event new];
         e.readyState = kEventStateOpen;
@@ -230,7 +229,7 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
                                   code:e.readyState
                               userInfo:@{ NSLocalizedDescriptionKey: @"Connection with the event source was closed.",
                                           @"status": [NSNumber numberWithLong: self.httpStatus],
-                                          @"body": bodyString}];
+                                          @"body": (bodyString == nil ? [[NSNull alloc] init] : bodyString)}];
 
     [self _dispatchEvent:e type:ReadyStateEvent];
     [self _dispatchEvent:e type:ErrorEvent];
@@ -262,6 +261,9 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
     NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
                                                           delegate:self
                                                      delegateQueue:[NSOperationQueue currentQueue]];
+    
+    self.httpStatus = 0;
+    self.httpResponseData = nil;
 
     self.eventSourceTask = [session dataTaskWithRequest:request];
     [self.eventSourceTask resume];
