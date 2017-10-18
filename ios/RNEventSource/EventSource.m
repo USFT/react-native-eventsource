@@ -85,6 +85,7 @@ static NSString *const ESEventRetryKey = @"retry";
         messageQueue = dispatch_queue_create("co.cwbrn.eventsource-queue", DISPATCH_QUEUE_SERIAL);
         connectionQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 
+        wasClosed = NO;
         dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(_retryInterval * NSEC_PER_SEC));
         dispatch_after(popTime, connectionQueue, ^(void){
             [self _open];
@@ -244,7 +245,9 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
 
 - (void)_open
 {
-    wasClosed = NO;
+    if (wasClosed)
+        return;
+    
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:self.eventURL
                                                            cachePolicy:NSURLRequestReloadIgnoringCacheData
                                                        timeoutInterval:self.timeoutInterval];
