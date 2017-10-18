@@ -37,6 +37,8 @@ static NSString *const ESEventRetryKey = @"retry";
 @property (nonatomic, assign) NSTimeInterval retryInterval;
 @property (nonatomic, strong) id lastEventID;
 @property (nonatomic, strong) NSString *authHeader;
+@property (nonatomic, assign) long httpStatus;
+@property (atomic, strong) NSMutableData *httpResponseData;
 
 - (void)_open;
 - (void)_dispatchEvent:(Event *)e;
@@ -132,13 +134,17 @@ static NSString *const ESEventRetryKey = @"retry";
 didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler
 {
     NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+    self.httpStatus = httpResponse.statusCode;
     if (httpResponse.statusCode == 200) {
+        self.httpResponseData = nil;
         // Opened
         Event *e = [Event new];
         e.readyState = kEventStateOpen;
 
         [self _dispatchEvent:e type:ReadyStateEvent];
         [self _dispatchEvent:e type:OpenEvent];
+    } else {
+        self.httpResponseData = [[NSMutableData alloc] init];
     }
 
     if (completionHandler) {
@@ -151,6 +157,10 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
     NSString *eventString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     NSArray *lines = [eventString componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
 
+    if (self.httpResponseData != nil) {
+        [self.httpResponseData appendData: data];
+    }
+    
     Event *event = [Event new];
     event.readyState = kEventStateOpen;
 
@@ -209,10 +219,17 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
     }
 
     Event *e = [Event new];
+    NSString *bodyString = nil;
+    if (self.httpResponseData != nil) {
+        bodyString = [[NSString alloc] initWithData:self.httpResponseData encoding:NSUTF8StringEncoding];
+        self.httpResponseData = nil;
+    }
     e.readyState = kEventStateClosed;
     e.error = error ?: [NSError errorWithDomain:@""
                                   code:e.readyState
-                              userInfo:@{ NSLocalizedDescriptionKey: @"Connection with the event source was closed." }];
+                              userInfo:@{ NSLocalizedDescriptionKey: @"Connection with the event source was closed.",
+                                          @"status": [NSNumber numberWithLong: self.httpStatus],
+                                          @"body": bodyString}];
 
     [self _dispatchEvent:e type:ReadyStateEvent];
     [self _dispatchEvent:e type:ErrorEvent];

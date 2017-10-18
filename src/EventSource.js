@@ -78,8 +78,11 @@ class EventSource extends EventSourceBase {
         if (ev.id !== id) {
           return;
         }
-        var event = new EventSourceEvent('error');
-        event.message = ev.message;
+        var event = new EventSourceEvent('error', {
+          "message": ev.message,
+          "status": ev.status,
+          "body": ev.body
+        });
         this.onerror && this.onerror(event);
         this.dispatchEvent(event);
         this._unregisterEvents();
