@@ -31,9 +31,8 @@ class EventSource extends EventSourceBase {
       auth = options.auth;
     }
 
-    RNEventSource.connect(url, this._sourceId, auth);
-
     this._registerEvents(this._sourceId);
+    RNEventSource.connect(url, this._sourceId, auth);
   }
 
   closeConnectionImpl(): void {
@@ -85,8 +84,6 @@ class EventSource extends EventSourceBase {
         });
         this.onerror && this.onerror(event);
         this.dispatchEvent(event);
-        this._unregisterEvents();
-        this.close();
       })
     ];
   }

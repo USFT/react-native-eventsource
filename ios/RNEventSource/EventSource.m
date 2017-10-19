@@ -31,13 +31,13 @@ static NSString *const ESEventRetryKey = @"retry";
 }
 
 @property (nonatomic, strong) NSURL *eventURL;
-@property (nonatomic, strong) NSURLSessionDataTask *eventSourceTask;
+@property (atomic, strong) NSURLSession *session;
 @property (nonatomic, strong) NSMutableDictionary *listeners;
 @property (nonatomic, assign) NSTimeInterval timeoutInterval;
 @property (nonatomic, assign) NSTimeInterval retryInterval;
 @property (nonatomic, strong) id lastEventID;
 @property (nonatomic, strong) NSString *authHeader;
-@property (nonatomic, assign) long httpStatus;
+@property (atomic, assign) long httpStatus;
 @property (atomic, strong) NSMutableData *httpResponseData;
 
 - (void)_open;
@@ -126,7 +126,7 @@ static NSString *const ESEventRetryKey = @"retry";
 - (void)close
 {
     wasClosed = YES;
-    [self.eventSourceTask cancel];
+    [self.session invalidateAndCancel];
 }
 
 // -----------------------------------------------------------------------------------------------------------------------------------------
@@ -212,7 +212,8 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(nullable NSError *)error
 {
-    self.eventSourceTask = nil;
+    [self.session finishTasksAndInvalidate];
+    self.session = nil;
 
     if (wasClosed) {
         return;
@@ -258,15 +259,15 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
         [request setValue:self.authHeader forHTTPHeaderField:@"auth"];
     }
     
-    NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
-                                                          delegate:self
-                                                     delegateQueue:[NSOperationQueue currentQueue]];
+    self.session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
+                                                 delegate:self
+                                            delegateQueue:[NSOperationQueue currentQueue]];
     
     self.httpStatus = 0;
     self.httpResponseData = nil;
 
-    self.eventSourceTask = [session dataTaskWithRequest:request];
-    [self.eventSourceTask resume];
+    NSURLSessionDataTask *eventSourceTask = [self.session dataTaskWithRequest:request];
+    [eventSourceTask resume];
 
     Event *e = [Event new];
     e.readyState = kEventStateConnecting;

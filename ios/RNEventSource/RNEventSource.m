@@ -59,8 +59,6 @@ RCT_EXPORT_METHOD(connect:(NSString *)URLString sourceID:(nonnull NSNumber *)sou
       @"body":e.error.userInfo[@"body"],
       @"id": source.reactTag
     }];
-
-    [source close];
   }];
 
   [source onMessage: ^(Event *e) {
