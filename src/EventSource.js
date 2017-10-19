@@ -45,6 +45,7 @@ class EventSource extends EventSourceBase {
 
   _closeEventSource(id: number): void {
     RNEventSource.close(id);
+		this._unregisterEvents();
   }
 
   _unregisterEvents(): void {
