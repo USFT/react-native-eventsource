@@ -230,7 +230,7 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
                                   code:e.readyState
                               userInfo:@{ NSLocalizedDescriptionKey: @"Connection with the event source was closed.",
                                           @"status": [NSNumber numberWithLong: self.httpStatus],
-                                          @"body": (bodyString == nil ? [[NSNull alloc] init] : bodyString)}];
+                                          @"body": (bodyString ?: (id)kCFNull)}];
 
     [self _dispatchEvent:e type:ReadyStateEvent];
     [self _dispatchEvent:e type:ErrorEvent];
