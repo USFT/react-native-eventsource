@@ -26,13 +26,8 @@ class EventSource extends EventSourceBase {
   connectToSourceImpl(url: string, options: any): void {
     this._sourceId = EventSourceId++;
 
-    var auth = null;
-    if (options) {
-      auth = options.auth;
-    }
-
     this._registerEvents(this._sourceId);
-    RNEventSource.connect(url, this._sourceId, auth);
+    RNEventSource.connect(url, this._sourceId, options || {});
   }
 
   closeConnectionImpl(): void {

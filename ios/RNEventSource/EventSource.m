@@ -36,7 +36,8 @@ static NSString *const ESEventRetryKey = @"retry";
 @property (nonatomic, assign) NSTimeInterval timeoutInterval;
 @property (nonatomic, assign) NSTimeInterval retryInterval;
 @property (nonatomic, strong) id lastEventID;
-@property (nonatomic, strong) NSString *authHeader;
+/// Options, including request headers.
+@property (nonatomic, strong) NSDictionary *options;
 @property (atomic, assign) long httpStatus;
 @property (atomic, strong) NSMutableData *httpResponseData;
 
@@ -47,40 +48,32 @@ static NSString *const ESEventRetryKey = @"retry";
 
 @implementation EventSource
 
-+ (instancetype)eventSourceWithURL:(NSURL *)URL
++ (instancetype)eventSourceWithURL:(NSURL *)URL options:(NSDictionary *)options
 {
-    return [[EventSource alloc] initWithURL:URL];
+    return [[EventSource alloc] initWithURL:URL options:options];
 }
+//timeoutInterval:ES_DEFAULT_TIMEOUT]
+// timeoutInterval:(NSTimeInterval)timeoutInterval
+// ES_RETRY_INTERVAL
 
-+ (instancetype)eventSourceWithURL:(NSURL *)URL timeoutInterval:(NSTimeInterval)timeoutInterval
-{
-    return [[EventSource alloc] initWithURL:URL timeoutInterval:timeoutInterval];
-}
-
-+ (instancetype)eventSourceWithURL:(NSURL *)URL auth:(NSString *)auth
-{
-    return [[EventSource alloc] initWithURL:URL auth:auth];
-}
-
-- (instancetype)initWithURL:(NSURL *)URL
-{
-    return [self initWithURL:URL timeoutInterval:ES_DEFAULT_TIMEOUT];
-}
-
-- (instancetype)initWithURL:(NSURL *)URL auth:(NSString *)auth
-{
-    self.authHeader = auth;
-    return [self initWithURL:URL timeoutInterval:ES_DEFAULT_TIMEOUT];
-}
-
-- (instancetype)initWithURL:(NSURL *)URL timeoutInterval:(NSTimeInterval)timeoutInterval
+- (instancetype)initWithURL:(NSURL *)URL options:(NSDictionary *)options
 {
     self = [super init];
     if (self) {
         _listeners = [NSMutableDictionary dictionary];
         _eventURL = URL;
-        _timeoutInterval = timeoutInterval;
+        _timeoutInterval = ES_DEFAULT_TIMEOUT;
         _retryInterval = ES_RETRY_INTERVAL;
+        
+        self.options = options;
+        
+        if (self.options[@"timeout_interval"] != nil) {
+            _timeoutInterval = [((NSNumber*)self.options[@"timeout_interval"]) doubleValue];
+        }
+        
+        if (self.options[@"retry_interval"] != nil) {
+            _timeoutInterval = [((NSNumber*)self.options[@"retry_interval"]) doubleValue];
+        }
 
         messageQueue = dispatch_queue_create("co.cwbrn.eventsource-queue", DISPATCH_QUEUE_SERIAL);
         connectionQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
@@ -255,8 +248,12 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
         [request setValue:self.lastEventID forHTTPHeaderField:@"Last-Event-ID"];
     }
     
-    if (self.authHeader) {
-        [request setValue:self.authHeader forHTTPHeaderField:@"auth"];
+    NSDictionary *headers = (NSDictionary*)self.options[@"headers"];
+    if (headers != nil) {
+        for (NSString *header in headers) {
+            NSString *value = headers[header];
+            [request setValue:value forHTTPHeaderField:header];
+        }
     }
     
     self.session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
