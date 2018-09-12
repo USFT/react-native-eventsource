@@ -48,6 +48,7 @@ static NSString *const ESEventRetryKey = @"retry";
 
 @implementation EventSource {
     Event *_bufferedEvent;
+    NSString *_lineBuffer;
 }
 
 + (instancetype)eventSourceWithURL:(NSURL *)URL options:(NSDictionary *)options
@@ -67,6 +68,7 @@ static NSString *const ESEventRetryKey = @"retry";
         _timeoutInterval = ES_DEFAULT_TIMEOUT;
         _retryInterval = ES_RETRY_INTERVAL;
         [self resetBufferedEvent];
+        _lineBuffer = nil;
         
         self.options = options;
         
@@ -158,7 +160,18 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
 {
     @synchronized (self) {
         NSString *eventString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        if(_lineBuffer != nil) {
+            eventString = [_lineBuffer stringByAppendingString:eventString];
+        }
         NSArray *lines = [eventString componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+        NSString* lastLine = [lines lastObject];
+        // If lastline is not empty, stream did not end in a new line and parsing should be deffered.
+        if(lastLine != nil && lastLine.length > 0) {
+            lines = [lines subarrayWithRange:(NSMakeRange(0, [lines count] - 1))];
+            _lineBuffer = lastLine;
+        } else {
+            _lineBuffer = nil;
+        }
 
         if (self.httpResponseData != nil) {
             [self.httpResponseData appendData: data];
@@ -171,8 +184,9 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
 
             if (!line || line.length == 0) {
                 if(_bufferedEvent.data != nil) {
+                    Event* dispatch = _bufferedEvent;
                     dispatch_async(messageQueue, ^{
-                        [self _dispatchEvent:_bufferedEvent];
+                        [self _dispatchEvent:dispatch];
                     });
                 }
                 [self resetBufferedEvent];
@@ -202,7 +216,11 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
                         self.lastEventID = _bufferedEvent.id;
                     } else if ([key isEqualToString:ESEventRetryKey]) {
                         self.retryInterval = [value doubleValue];
+                    } else {
+                        NSLog(@"Received invalid event key: %@", key);
                     }
+                } else {
+                    NSLog(@"Received invalid event stream line: '%@'", line);
                 }
             }
         }
