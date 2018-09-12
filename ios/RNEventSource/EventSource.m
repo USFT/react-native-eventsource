@@ -11,6 +11,7 @@
 
 static CGFloat const ES_RETRY_INTERVAL = 1.0;
 static CGFloat const ES_DEFAULT_TIMEOUT = 300.0;
+static int const ES_LINEBUFFER_LIMIT = 32768;
 
 static NSString *const ESKeyValueDelimiter = @":";
 static NSString *const ESEventSeparatorLFLF = @"\n\n";
@@ -161,7 +162,14 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
     @synchronized (self) {
         NSString *eventString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
         if(_lineBuffer != nil) {
-            eventString = [_lineBuffer stringByAppendingString:eventString];
+            if((_lineBuffer.length + eventString.length) < ES_LINEBUFFER_LIMIT) {
+                eventString = [_lineBuffer stringByAppendingString:eventString];
+            }
+            else {
+                NSLog(@"EventSource line buffer truncated to prevent overflow");
+                _lineBuffer = nil;
+                eventString = @"";
+            }
         }
         NSArray *lines = [eventString componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
         NSString* lastLine = [lines lastObject];
