@@ -251,10 +251,10 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
         self.httpResponseData = nil;
     }
     e.readyState = kEventStateClosed;
-    e.error = error ?: [NSError errorWithDomain:@""
+    e.error = [NSError errorWithDomain:@""
                                   code:e.readyState
-                              userInfo:@{ NSLocalizedDescriptionKey: @"Connection with the event source was closed.",
-                                          @"status": [NSNumber numberWithLong: self.httpStatus],
+                              userInfo:@{ NSLocalizedDescriptionKey: (error ? [error localizedDescription] : @"Connection with the event source was closed."),
+                                          @"status": [NSNumber numberWithLong: (self.httpStatus ?: 0)],
                                           @"body": (bodyString ?: (id)kCFNull)}];
 
     [self _dispatchEvent:e type:ReadyStateEvent];
