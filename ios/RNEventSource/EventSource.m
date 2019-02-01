@@ -11,6 +11,7 @@
 
 static CGFloat const ES_RETRY_INTERVAL = 1.0;
 static CGFloat const ES_DEFAULT_TIMEOUT = 300.0;
+static int const ES_LINEBUFFER_LIMIT = 32768;
 
 static NSString *const ESKeyValueDelimiter = @":";
 static NSString *const ESEventSeparatorLFLF = @"\n\n";
@@ -46,7 +47,10 @@ static NSString *const ESEventRetryKey = @"retry";
 
 @end
 
-@implementation EventSource
+@implementation EventSource {
+    Event *_bufferedEvent;
+    NSString *_lineBuffer;
+}
 
 + (instancetype)eventSourceWithURL:(NSURL *)URL options:(NSDictionary *)options
 {
@@ -64,6 +68,8 @@ static NSString *const ESEventRetryKey = @"retry";
         _eventURL = URL;
         _timeoutInterval = ES_DEFAULT_TIMEOUT;
         _retryInterval = ES_RETRY_INTERVAL;
+        [self resetBufferedEvent];
+        _lineBuffer = nil;
         
         self.options = options;
         
@@ -85,6 +91,12 @@ static NSString *const ESEventRetryKey = @"retry";
         });
     }
     return self;
+}
+
+- (void)resetBufferedEvent
+{
+    _bufferedEvent = [Event new];
+    _bufferedEvent.readyState = kEventStateOpen;
 }
 
 - (void)addEventListener:(NSString *)eventName handler:(EventSourceEventHandler)handler
@@ -147,56 +159,76 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveData:(NSData *)data
 {
-    NSString *eventString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    NSArray *lines = [eventString componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-
-    if (self.httpResponseData != nil) {
-        [self.httpResponseData appendData: data];
-    }
-    
-    Event *event = [Event new];
-    event.readyState = kEventStateOpen;
-
-    for (NSString *line in lines) {
-        if ([line hasPrefix:ESKeyValueDelimiter]) {
-            continue;
-        }
-
-        if (!line || line.length == 0) {
-            if (event.data != nil) {
-                dispatch_async(messageQueue, ^{
-                    [self _dispatchEvent:event];
-                });
-
-                event = [Event new];
-                event.readyState = kEventStateOpen;
+    @synchronized (self) {
+        NSString *eventString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        if(_lineBuffer != nil) {
+            if((_lineBuffer.length + eventString.length) < ES_LINEBUFFER_LIMIT) {
+                eventString = [_lineBuffer stringByAppendingString:eventString];
             }
-            continue;
+            else {
+                NSLog(@"EventSource line buffer truncated to prevent overflow");
+                _lineBuffer = nil;
+                eventString = @"";
+            }
+        }
+        NSArray *lines = [eventString componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+        NSString* lastLine = [lines lastObject];
+        // If lastline is not empty, stream did not end in a new line and parsing should be deffered.
+        if(lastLine != nil && lastLine.length > 0) {
+            lines = [lines subarrayWithRange:(NSMakeRange(0, [lines count] - 1))];
+            _lineBuffer = lastLine;
+        } else {
+            _lineBuffer = nil;
         }
 
-        @autoreleasepool {
-            NSScanner *scanner = [NSScanner scannerWithString:line];
-            scanner.charactersToBeSkipped = [NSCharacterSet whitespaceCharacterSet];
+        if (self.httpResponseData != nil) {
+            [self.httpResponseData appendData: data];
+        }
+        
+        for (NSString *line in lines) {
+            if ([line hasPrefix:ESKeyValueDelimiter]) {
+                continue;
+            }
 
-            NSString *key, *value;
-            [scanner scanUpToString:ESKeyValueDelimiter intoString:&key];
-            [scanner scanString:ESKeyValueDelimiter intoString:nil];
-            [scanner scanUpToCharactersFromSet:[NSCharacterSet newlineCharacterSet] intoString:&value];
+            if (!line || line.length == 0) {
+                if(_bufferedEvent.data != nil) {
+                    Event* dispatch = _bufferedEvent;
+                    dispatch_async(messageQueue, ^{
+                        [self _dispatchEvent:dispatch];
+                    });
+                }
+                [self resetBufferedEvent];
+                continue;
+            }
 
-            if (key && value) {
-                if ([key isEqualToString:ESEventEventKey]) {
-                    event.event = value;
-                } else if ([key isEqualToString:ESEventDataKey]) {
-                    if (event.data != nil) {
-                        event.data = [event.data stringByAppendingFormat:@"\n%@", value];
+            @autoreleasepool {
+                NSScanner *scanner = [NSScanner scannerWithString:line];
+                scanner.charactersToBeSkipped = [NSCharacterSet whitespaceCharacterSet];
+
+                NSString *key, *value;
+                [scanner scanUpToString:ESKeyValueDelimiter intoString:&key];
+                [scanner scanString:ESKeyValueDelimiter intoString:nil];
+                [scanner scanUpToCharactersFromSet:[NSCharacterSet newlineCharacterSet] intoString:&value];
+
+                if (key && value) {
+                    if ([key isEqualToString:ESEventEventKey]) {
+                        _bufferedEvent.event = value;
+                    } else if ([key isEqualToString:ESEventDataKey]) {
+                        if (_bufferedEvent.data != nil) {
+                            _bufferedEvent.data = [_bufferedEvent.data stringByAppendingFormat:@"\n%@", value];
+                        } else {
+                            _bufferedEvent.data = value;
+                        }
+                    } else if ([key isEqualToString:ESEventIDKey]) {
+                        _bufferedEvent.id = value;
+                        self.lastEventID = _bufferedEvent.id;
+                    } else if ([key isEqualToString:ESEventRetryKey]) {
+                        self.retryInterval = [value doubleValue];
                     } else {
-                        event.data = value;
+                        NSLog(@"Received invalid event key: %@", key);
                     }
-                } else if ([key isEqualToString:ESEventIDKey]) {
-                    event.id = value;
-                    self.lastEventID = event.id;
-                } else if ([key isEqualToString:ESEventRetryKey]) {
-                    self.retryInterval = [value doubleValue];
+                } else {
+                    NSLog(@"Received invalid event stream line: '%@'", line);
                 }
             }
         }
@@ -219,10 +251,10 @@ didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSe
         self.httpResponseData = nil;
     }
     e.readyState = kEventStateClosed;
-    e.error = error ?: [NSError errorWithDomain:@""
+    e.error = [NSError errorWithDomain:@""
                                   code:e.readyState
-                              userInfo:@{ NSLocalizedDescriptionKey: @"Connection with the event source was closed.",
-                                          @"status": [NSNumber numberWithLong: self.httpStatus],
+                              userInfo:@{ NSLocalizedDescriptionKey: (error ? [error localizedDescription] : @"Connection with the event source was closed."),
+                                          @"status": [NSNumber numberWithLong: (self.httpStatus ?: 0)],
                                           @"body": (bodyString ?: (id)kCFNull)}];
 
     [self _dispatchEvent:e type:ReadyStateEvent];
@@ -330,3 +362,4 @@ NSString *const MessageEvent = @"message";
 NSString *const ErrorEvent = @"error";
 NSString *const OpenEvent = @"open";
 NSString *const ReadyStateEvent = @"readyState";
+
