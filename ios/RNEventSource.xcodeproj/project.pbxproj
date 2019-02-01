@@ -41,7 +41,6 @@
 		911488961B28A9A700A81437 /* RNEventSource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNEventSource.h; sourceTree = "<group>"; };
 		911488981B28A9A700A81437 /* RNEventSource.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNEventSource.m; sourceTree = "<group>"; };
 		9114889E1B28A9A700A81437 /* RNEventSourceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RNEventSourceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		911488A31B28A9A700A81437 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		917EB07F1B28B00200EBBC2F /* EventSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EventSource.h; sourceTree = "<group>"; };
 		917EB0801B28B00200EBBC2F /* EventSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EventSource.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -69,7 +68,6 @@
 			isa = PBXGroup;
 			children = (
 				911488951B28A9A700A81437 /* RNEventSource */,
-				911488A21B28A9A700A81437 /* RNEventSourceTests */,
 				911488941B28A9A700A81437 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -92,14 +90,6 @@
 				911488981B28A9A700A81437 /* RNEventSource.m */,
 			);
 			path = RNEventSource;
-			sourceTree = "<group>";
-		};
-		911488A21B28A9A700A81437 /* RNEventSourceTests */ = {
-			isa = PBXGroup;
-			children = (
-				911488A31B28A9A700A81437 /* Info.plist */,
-			);
-			path = RNEventSourceTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
