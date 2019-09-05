@@ -39,11 +39,11 @@ RCT_EXPORT_MODULE();
   }
 }
 
-RCT_EXPORT_METHOD(connect:(NSString *)URLString sourceID:(nonnull NSNumber *)sourceID auth:(nonnull NSString *)auth)
+RCT_EXPORT_METHOD(connect:(NSString *)URLString sourceID:(nonnull NSNumber *)sourceID options:(nonnull NSDictionary *)options)
 {
   NSURL *serverURL = [NSURL URLWithString:URLString];
 
-    EventSource *source = [EventSource eventSourceWithURL:serverURL auth:auth];
+  EventSource *source = [EventSource eventSourceWithURL:serverURL options:options];
   source.reactTag = sourceID;
 
   [source onOpen: ^(Event *e) {
@@ -55,10 +55,10 @@ RCT_EXPORT_METHOD(connect:(NSString *)URLString sourceID:(nonnull NSNumber *)sou
   [source onError: ^(Event *e) {
     [_bridge.eventDispatcher sendDeviceEventWithName:@"eventsourceFailed" body:@{
       @"message":e.error.userInfo[@"NSLocalizedDescription"],
+      @"status":RCTNullIfNil(e.error.userInfo[@"status"]),
+      @"body":RCTNullIfNil(e.error.userInfo[@"body"]),
       @"id": source.reactTag
     }];
-
-    [source close];
   }];
 
   [source onMessage: ^(Event *e) {

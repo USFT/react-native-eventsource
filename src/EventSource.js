@@ -23,12 +23,11 @@ class EventSource extends EventSourceBase {
   _sourceId: number;
   _subs: any;
 
-  connectToSourceImpl(url: string, auth: string): void {
+  connectToSourceImpl(url: string, options: any): void {
     this._sourceId = EventSourceId++;
 
-    RNEventSource.connect(url, this._sourceId, auth);
-
     this._registerEvents(this._sourceId);
+    RNEventSource.connect(url, this._sourceId, options || {});
   }
 
   closeConnectionImpl(): void {
@@ -41,6 +40,7 @@ class EventSource extends EventSourceBase {
 
   _closeEventSource(id: number): void {
     RNEventSource.close(id);
+		this._unregisterEvents();
   }
 
   _unregisterEvents(): void {
@@ -73,12 +73,13 @@ class EventSource extends EventSourceBase {
         if (ev.id !== id) {
           return;
         }
-        var event = new EventSourceEvent('error');
-        event.message = ev.message;
+        var event = new EventSourceEvent('error', {
+          "message": ev.message,
+          "status": ev.status,
+          "body": ev.body
+        });
         this.onerror && this.onerror(event);
         this.dispatchEvent(event);
-        this._unregisterEvents();
-        this.close();
       })
     ];
   }

@@ -84,7 +84,7 @@
   "name": "react-native-eventsource",
   "optionalDependencies": {},
   "peerDependencies": {
-    "react-native": "^0.42.3"
+    "react-native": "^0.60.0"
   },
   "readme": "ERROR: No README data found!",
   "repository": {
@@ -94,5 +94,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "0.0.3"
+  "version": "0.0.3",
+  "files": [
+    "android",
+    "ios",
+    "src",
+    "index.js",
+    "react-native-eventsource.podspec"
+  ]
 }
